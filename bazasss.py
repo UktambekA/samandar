@@ -866,7 +866,7 @@ async def handle_payment_type(message: Message, state: FSMContext):
         logger.info(f"user_info muvaffaqiyatli o'qildi: {user_info}, user_id: {message.from_user.id}")
     total_price, discountable_total = await get_total_price(order, bot.pool)
     full_total_price = total_price
-    is_full_payment = message.text == "Ha✅"
+    is_full_payment = message.text == "Ҳа✅"
     discount = 0
     discounted_price = full_total_price
 
