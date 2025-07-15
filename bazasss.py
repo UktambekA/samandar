@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 # --- Config ---
-BOT_TOKEN = '7731234849:AAFoVPyPLSiuAiXaOaw8q1_A3bjDE51NhSI'
+BOT_TOKEN = '7731234849:AAGv59rUmIqaZ0eUHjUIJfVrwCEC-4W7It0'
 DB_CONFIG = {
     'user': 'postgres',
     'password': 'saman07',
