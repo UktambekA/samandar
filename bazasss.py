@@ -33,7 +33,7 @@ DB_CONFIG = {
     'host': 'localhost',
     'port': 5432
 }
-GROUP_CHAT_ID = "-1002865807540"
+GROUP_CHAT_ID = "-1002170168147"
 
 # Dorilar nomlarini mapping qilish uchun lug'at
 MEDICINE_MAPPING = {
