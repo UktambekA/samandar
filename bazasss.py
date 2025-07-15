@@ -442,25 +442,40 @@ async def restart_work(message: Message, state: FSMContext):
         await state.set_state(StartWorkState.waiting_for_location)
 
 # Prays listni ko'rsatish
+# @dp.message(F.text == "Нархлар рўйхати")
+# async def show_price_list(message: Message):
+#     try:
+#         async with bot.pool.acquire() as conn:
+#             query = """SELECT image_path FROM price_list WHERE image_path IS NOT NULL ORDER BY id DESC LIMIT 1"""
+#             row = await conn.fetchrow(query)
+#     except Exception as e:
+#         logger.error(f"DB error: {e}")
+#         await message.answer("Bazadan rasm olishda xatolik yuz berdi")
+#         return
+#     if not row:
+#         await message.answer("Rasm topilmadi")
+#         return
+#     image_path = row["image_path"]
+#     try:
+#         await message.answer_photo(photo=FSInputFile(image_path), caption="Нархлар рўйхати")
+#     except Exception as e:
+#         logger.error(f"File error: {e}")
+#         await message.answer("Rasm yo'q")
+
 @dp.message(F.text == "Нархлар рўйхати")
 async def show_price_list(message: Message):
     try:
-        async with bot.pool.acquire() as conn:
-            query = """SELECT image_path FROM price_list WHERE image_path IS NOT NULL ORDER BY id DESC LIMIT 1"""
-            row = await conn.fetchrow(query)
+        # GitHub raw URL
+        image_url = "https://raw.githubusercontent.com/UktambekA/samandar/master/price.jpg"
+        
+        # To'g'ridan-to'g'ri URL orqali rasm yuborish
+        await message.answer_photo(photo=image_url, caption="Нархлар рўйхати")
+        
     except Exception as e:
-        logger.error(f"DB error: {e}")
-        await message.answer("Bazadan rasm olishda xatolik yuz berdi")
-        return
-    if not row:
-        await message.answer("Rasm topilmadi")
-        return
-    image_path = row["image_path"]
-    try:
-        await message.answer_photo(photo=FSInputFile(image_path), caption="Нархлар рўйхати")
-    except Exception as e:
-        logger.error(f"File error: {e}")
-        await message.answer("Rasm yo'q")
+        logger.error(f"GitHub rasm yuklashda xatolik: {e}")
+        await message.answer("Rasm yuklanmadi")
+
+
 
 # Spec tuzish - lokatsiya so'rash
 @dp.message(F.text == "Спецификация  тузиш")
