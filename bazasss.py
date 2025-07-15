@@ -793,53 +793,36 @@ async def select_medicine(message: Message, state: FSMContext):
         return
     db_medicine = MEDICINE_MAPPING.get(selected_medicine, selected_medicine)
     medicine_info = await get_medicine_info(db_medicine)
-    # if medicine_info:
-    #     info_text = f"<b>{selected_medicine}</b>\n"
-    #     info_text += f"<b>Инфо:</b> {medicine_info.get('tavsif')}\n"
-    #     info_text += f"<b>Упк:</b> {medicine_info.get('hajm')}\n"
-    #     rasm_path = medicine_info.get('rasm_path')
-    #     if rasm_path and os.path.exists(rasm_path):
-    #         try:
-    #             await message.answer_photo(photo=FSInputFile(rasm_path), caption=info_text)
-    #         except Exception as e:
-    #             logger.error(f"Rasm yuborishda xato, dori: {selected_medicine}, xato: {e}")
-    #             await message.answer(info_text)
-    #             await message.answer("Расмни юборишда хатолик юз берди.")
-    #     else:
-    #         await message.answer(info_text)
-
-        if medicine_info:
-            info_text = f"<b>{selected_medicine}</b>\n"
-            info_text += f"<b>Инфо:</b> {medicine_info.get('tavsif')}\n"
-            info_text += f"<b>Упк:</b> {medicine_info.get('hajm')}\n"
-        
-            # Fayl to‘liq yo‘lini tuzish
-            rasm_path = medicine_info.get('rasm_path')
-            if rasm_path:
-                # Yo‘ldagi noto‘g‘ri `//` ni almashtiramiz
-                rasm_path = os.path.normpath(rasm_path)
-        
-                # Fayl to‘liq mavjudmi?
-                if os.path.exists(rasm_path):
-                    try:
-                        photo = FSInputFile(rasm_path)
-                        await message.answer_photo(photo=photo, caption=info_text)
-                    except Exception as e:
-                        logger.error(f"Rasm yuborishda xato, dori: {selected_medicine}, xato: {e}")
-                        await message.answer(info_text)
-                        await message.answer("❌ Расмни юборишда хатолик юз берди.")
-                else:
-                    logger.warning(f"Rasm fayli topilmadi: {rasm_path}")
+    
+    if medicine_info:
+        info_text = f"<b>{selected_medicine}</b>\n"
+        info_text += f"<b>Инфо:</b> {medicine_info.get('tavsif')}\n"
+        info_text += f"<b>Упк:</b> {medicine_info.get('hajm')}\n"
+    
+        # Fayl to‘liq yo‘lini tuzish
+        rasm_path = medicine_info.get('rasm_path')
+        if rasm_path:
+            # Yo‘ldagi noto‘g‘ri `//` ni almashtiramiz
+            rasm_path = os.path.normpath(rasm_path)
+    
+            # Fayl to‘liq mavjudmi?
+            if os.path.exists(rasm_path):
+                try:
+                    photo = FSInputFile(rasm_path)
+                    await message.answer_photo(photo=photo, caption=info_text)
+                except Exception as e:
+                    logger.error(f"Rasm yuborishda xato, dori: {selected_medicine}, xato: {e}")
                     await message.answer(info_text)
-                    await message.answer("⚠️ Расм файли мавжуд эмас.")
+                    await message.answer("❌ Расмни юборишда хатолик юз берди.")
             else:
-                await message.answer(info_text)
-        
-            if rasm_path:
                 logger.warning(f"Rasm fayli topilmadi: {rasm_path}")
-                await message.answer("Расм файли мавжуд эмас.")
+                await message.answer(info_text)
+                await message.answer("⚠️ Расм файли мавжуд эмас.")
+        else:
+            await message.answer(info_text)
     else:
         await message.answer(f"<b>{selected_medicine}</b> haqida ma'lumot topilmadi.")
+    
     data = await state.get_data()
     order = data.get('order', {})
     if selected_medicine in order:
