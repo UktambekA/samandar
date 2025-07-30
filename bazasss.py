@@ -248,7 +248,7 @@ async def generate_excel(order: dict, apteka_info: dict, total_price: float, dis
         ws[f'C{row}'] = idx
         ws[f'D{row}'] = full_name
         ws[f'E{row}'] = ""
-        ws[f'F{row}'] = "123456887"
+        ws[f'F{row}'] = "02106999028000000"
         ws[f'G{row}'] = qty
         ws[f'H{row}'] = round(adjusted_price, 2)
         delivery_cost = round(adjusted_price * qty, 2)
