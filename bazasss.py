@@ -52,7 +52,7 @@ MEDICINE_MAPPING = {
     "КАЛЦИЙ+Д3": "KALTSIY+D3",
     "АРТРОЗИТ": "ARTROZIT",
     "ЛАЙТВИТ": "LAYTVIT",
-    "РЕЛАФЛОР": "RELAFLOR"
+    "ФЛОРАВЕЛ": "FLORAVEL"
 }
 
 REVERSE_MEDICINE_MAPPING = {v: k for k, v in MEDICINE_MAPPING.items()}
