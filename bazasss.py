@@ -48,9 +48,6 @@ MEDICINE_MAPPING = {
     "ЗИНКИД": "ZINKID",
     "РЕСЛИП": "RESLIP",
     "ЭЛВИКИД": "ELVIKID",
-    "МАГНИЙ Б6": "MAGNIY B",
-    "КАЛЦИЙ+Д3": "KALTSIY+D3",
-    "АРТРОЗИТ": "ARTROZIT",
     "ЛАЙТВИТ": "LAYTVIT",
     "ФЛОРАВЕЛ": "FLORAVEL"
 }
