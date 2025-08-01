@@ -25,7 +25,7 @@ logging.basicConfig(level=logging.ERROR, format='%(asctime)s - %(levelname)s - %
 logger = logging.getLogger(__name__)
 
 # --- Config ---
-BOT_TOKEN = '7979729779:AAEoZ3g9uHZurvmZv4v8-B6sag_5P05CyCo'
+BOT_TOKEN = '7731234849:AAGv59rUmIqaZ0eUHjUIJfVrwCEC-4W7It0'
 DB_CONFIG = {
     'user': 'postgres',
     'password': 'saman07',
@@ -74,7 +74,6 @@ class SpecState(StatesGroup):
 class OrderState(StatesGroup):
     selecting_medicine = State()
     entering_quantity = State()
-    waiting_for_comment = State()  # New state for comment input
     reviewing_order = State()
 
 class EndWorkState(StatesGroup):
@@ -442,11 +441,31 @@ async def restart_work(message: Message, state: FSMContext):
         await state.set_state(StartWorkState.waiting_for_location)
 
 # Prays listni ko'rsatish
+# @dp.message(F.text == "Нархлар рўйхати")
+# async def show_price_list(message: Message):
+#     try:
+#         async with bot.pool.acquire() as conn:
+#             query = """SELECT image_path FROM price_list WHERE image_path IS NOT NULL ORDER BY id DESC LIMIT 1"""
+#             row = await conn.fetchrow(query)
+#     except Exception as e:
+#         logger.error(f"DB error: {e}")
+#         await message.answer("Bazadan rasm olishda xatolik yuz berdi")
+#         return
+#     if not row:
+#         await message.answer("Rasm topilmadi")
+#         return
+#     image_path = row["image_path"]
+#     try:
+#         await message.answer_photo(photo=FSInputFile(image_path), caption="Нархлар рўйхати")
+#     except Exception as e:
+#         logger.error(f"File error: {e}")
+#         await message.answer("Rasm yo'q")
+
 @dp.message(F.text == "Нархлар рўйхати")
 async def show_price_list(message: Message):
     try:
         # GitHub raw URL
-        image_url = "https://raw.githubusercontent.com/UktambekA/samandar/master/price.jpg"
+        image_url = "https://raw.githubusercontent.com/UktambekA/samandar/refs/heads/master/price.jpg"
         
         # To'g'ridan-to'g'ri URL orqali rasm yuborish
         await message.answer_photo(photo=image_url, caption="Нархлар рўйхати")
@@ -454,6 +473,8 @@ async def show_price_list(message: Message):
     except Exception as e:
         logger.error(f"GitHub rasm yuklashda xatolik: {e}")
         await message.answer("Rasm yuklanmadi")
+
+
 
 # Spec tuzish - lokatsiya so'rash
 @dp.message(F.text == "Спецификация  тузиш")
@@ -701,7 +722,7 @@ async def confirm_apteka(message: Message, state: FSMContext):
         data = await state.get_data()
         display_medicines = list(MEDICINE_MAPPING.keys())
         if not display_medicines:
-            await message.answer("Дорилар рўйхати бўш.")
+            await message.answer("Дорилар рўйҳати бўш.")
             await state.clear()
             await show_main_menu(message)
             return
@@ -769,16 +790,13 @@ async def select_medicine(message: Message, state: FSMContext):
         if not order:
             await message.answer("Ҳеч қандай дори танланмаган. Илтимос камида 1 та дорини танланг.")
             return
-        await message.answer(
-            "Илтимос, буюртмага изоҳ киритинг (масалан, қўшимча маълумот ёки эслатма). "
-            "Агар изоҳ йўқ бўлса, 'Ўтказиб юбориш' деб ёзинг:",
-            reply_markup=ReplyKeyboardMarkup(
-                keyboard=[[KeyboardButton(text="Ўтказиб юбориш")]],
-                resize_keyboard=True,
-                one_time_keyboard=True
-            )
+        payment_buttons = ReplyKeyboardMarkup(
+            keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
+            resize_keyboard=True,
+            one_time_keyboard=True
         )
-        await state.set_state(OrderState.waiting_for_comment)
+        await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
+        await state.set_state(OrderState.reviewing_order)
         return
     selected_medicine = message.text.strip()
     if '(' in selected_medicine:
@@ -851,22 +869,6 @@ async def select_medicine(message: Message, state: FSMContext):
         await state.update_data(selected_medicine=selected_medicine, editing_mode=False)
         await state.set_state(OrderState.entering_quantity)
 
-# Comment input handler
-@dp.message(OrderState.waiting_for_comment)
-async def handle_comment(message: Message, state: FSMContext):
-    comment = message.text.strip()
-    if comment == "Ўтказиб юбориш":
-        comment = ""
-    await state.update_data(comment=comment)
-    payment_buttons = ReplyKeyboardMarkup(
-        keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
-        resize_keyboard=True,
-        one_time_keyboard=True
-    )
-    await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
-    await state.set_state(OrderState.reviewing_order)
-
-# Payment type handler
 @dp.message(OrderState.reviewing_order)
 async def handle_payment_type(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -878,7 +880,6 @@ async def handle_payment_type(message: Message, state: FSMContext):
     dogovor = data.get('dogovor', '')
     rs = data.get('rs', '')
     mfo = data.get('mfo', '')
-    comment = data.get('comment', '')  # Retrieve the comment
 
     user_info = bot.user_info_cache.get(message.from_user.id, {'first_name': '', 'last_name': ''})
     mp_ismi = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
@@ -888,7 +889,6 @@ async def handle_payment_type(message: Message, state: FSMContext):
         mp_ismi = "Номаълум"
     else:
         logger.info(f"user_info muvaffaqiyatli o'qildi: {user_info}, user_id: {message.from_user.id}")
-    
     total_price, discountable_total = await get_total_price(order, bot.pool)
     full_total_price = total_price
     is_full_payment = message.text == "Ҳа✅"
@@ -901,6 +901,7 @@ async def handle_payment_type(message: Message, state: FSMContext):
         else:
             discount = full_total_price * 0.05
         discounted_price = full_total_price - discount
+
 
     apteka_info = {
         'dogovor': dogovor,
@@ -925,9 +926,6 @@ async def handle_payment_type(message: Message, state: FSMContext):
         f"Телефон: {telefon}\n"
         f"Вақт: {datetime.now().strftime('%d-%m-%y %H:%M')}\n"
     )
-    if comment:
-        caption += f"Изоҳ: {comment}\n"
-    
     await bot.send_document(
         chat_id=GROUP_CHAT_ID,
         document=BufferedInputFile(
