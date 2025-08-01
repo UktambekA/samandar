@@ -75,6 +75,7 @@ class OrderState(StatesGroup):
     selecting_medicine = State()
     entering_quantity = State()
     reviewing_order = State()
+    waiting_for_comment = State()
 
 class EndWorkState(StatesGroup):
     waiting_for_location = State()
@@ -790,14 +791,9 @@ async def select_medicine(message: Message, state: FSMContext):
         if not order:
             await message.answer("Ҳеч қандай дори танланмаган. Илтимос камида 1 та дорини танланг.")
             return
-        payment_buttons = ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
-            resize_keyboard=True,
-            one_time_keyboard=True
-        )
-        await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
-        await state.set_state(OrderState.reviewing_order)
-        return
+        await message.answer("Илтимос, буюртма учун изоҳ (комментарий) киритинг. Агар бўлмаса, '-' деб ёзинг:")
+        await state.update_data(order=order)
+        await state.set_state(OrderState.waiting_for_comment)
     selected_medicine = message.text.strip()
     if '(' in selected_medicine:
         selected_medicine = selected_medicine.split('(')[0].strip()
@@ -869,6 +865,21 @@ async def select_medicine(message: Message, state: FSMContext):
         await state.update_data(selected_medicine=selected_medicine, editing_mode=False)
         await state.set_state(OrderState.entering_quantity)
 
+
+@dp.message(OrderState.waiting_for_comment)
+async def get_comment(message: Message, state: FSMContext):
+    comment = message.text.strip()
+    await state.update_data(comment=comment)
+    
+    payment_buttons = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
+    await state.set_state(OrderState.reviewing_order)
+
+
 @dp.message(OrderState.reviewing_order)
 async def handle_payment_type(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -925,6 +936,7 @@ async def handle_payment_type(message: Message, state: FSMContext):
         f"ИНН: {inn}\n"
         f"Телефон: {telefon}\n"
         f"Вақт: {datetime.now().strftime('%d-%m-%y %H:%M')}\n"
+        f"Комментария: {comment}"
     )
     await bot.send_document(
         chat_id=GROUP_CHAT_ID,
