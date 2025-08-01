@@ -465,7 +465,7 @@ async def restart_work(message: Message, state: FSMContext):
 async def show_price_list(message: Message):
     try:
         # GitHub raw URL
-        image_url = "https://raw.githubusercontent.com/UktambekA/samandar/master/price.jpg"
+        image_url = "https://github.com/UktambekA/samandar/blob/master/price.jpg"
         
         # To'g'ridan-to'g'ri URL orqali rasm yuborish
         await message.answer_photo(photo=image_url, caption="Нархлар рўйхати")
