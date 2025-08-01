@@ -790,14 +790,19 @@ async def select_medicine(message: Message, state: FSMContext):
         if not order:
             await message.answer("Ҳеч қандай дори танланмаган. Илтимос камида 1 та дорини танланг.")
             return
-        payment_buttons = ReplyKeyboardMarkup(
-            keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
-            resize_keyboard=True,
-            one_time_keyboard=True
+
+        await message.answer(
+            "Илтимос, буюртмага изоҳ киритинг (масалан, қўшимча маълумот ёки эслатма). "
+            "Агар изоҳ йўқ бўлса, 'Ўтказиб юбориш' деб ёзинг:",
+            reply_markup=ReplyKeyboardMarkup(
+                keyboard=[[KeyboardButton(text="Ўтказиб юбориш")]],
+                resize_keyboard=True,
+                one_time_keyboard=True
+            )
         )
-        await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
-        await state.set_state(OrderState.reviewing_order)
+        await state.set_state(OrderState.waiting_for_comment)
         return
+        
     selected_medicine = message.text.strip()
     if '(' in selected_medicine:
         selected_medicine = selected_medicine.split('(')[0].strip()
@@ -805,6 +810,7 @@ async def select_medicine(message: Message, state: FSMContext):
         await message.answer("Илтимос рўйхатдан дорини танланг!")
         await show_medicines_list(message, state)
         return
+        
     db_medicine = MEDICINE_MAPPING.get(selected_medicine, selected_medicine)
     medicine_info = await get_medicine_info(db_medicine)
     
@@ -869,6 +875,21 @@ async def select_medicine(message: Message, state: FSMContext):
         await state.update_data(selected_medicine=selected_medicine, editing_mode=False)
         await state.set_state(OrderState.entering_quantity)
 
+@dp.message(OrderState.waiting_for_comment)
+async def handle_comment(message: Message, state: FSMContext):
+    comment = message.text.strip()
+    if comment == "Ўтказиб юбориш":
+        comment = ""
+    await state.update_data(comment=comment)
+    payment_buttons = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="Ҳа✅"), KeyboardButton(text="Йўқ❌")]],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    await message.answer("Тўлов 100% бўладими?", reply_markup=payment_buttons)
+    await state.set_state(OrderState.reviewing_order)
+
+
 @dp.message(OrderState.reviewing_order)
 async def handle_payment_type(message: Message, state: FSMContext):
     data = await state.get_data()
@@ -880,6 +901,8 @@ async def handle_payment_type(message: Message, state: FSMContext):
     dogovor = data.get('dogovor', '')
     rs = data.get('rs', '')
     mfo = data.get('mfo', '')
+    comment = data.get('comment', '')
+    
 
     user_info = bot.user_info_cache.get(message.from_user.id, {'first_name': '', 'last_name': ''})
     mp_ismi = f"{user_info.get('first_name', '')} {user_info.get('last_name', '')}".strip()
@@ -925,6 +948,7 @@ async def handle_payment_type(message: Message, state: FSMContext):
         f"ИНН: {inn}\n"
         f"Телефон: {telefon}\n"
         f"Вақт: {datetime.now().strftime('%d-%m-%y %H:%M')}\n"
+        f"Комментария: {comment}\n"
     )
     await bot.send_document(
         chat_id=GROUP_CHAT_ID,
